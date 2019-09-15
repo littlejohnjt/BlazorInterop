@@ -1,0 +1,117 @@
+@page "/CallingDotNetFromJs"
+@inject IJSRuntime JsRuntime
+@using System.Text.Json
+
+<h3>Calling Static .Net Method from Javascript</h3>
+
+<button type="button" class="btn btn-primary"
+        onclick="JavascriptToDotNet.returnArrayJsAsync()">
+    Trigger .NET static method ReturnArrayAsync from Javascipt
+</button>
+
+<p><em>Note:</em> open developer tools and see the results in the console window.</p>
+
+<hr />
+
+<h3>Calling .Net Instance Method HelloHelper.SayHello</h3>
+
+<button type="button" class="btn btn-primary" @onclick="@TriggerNetInstanceMethod">
+    Trigger .NET instance method HelloHelper.SayHello
+</button>
+
+<p><em>Note:</em> open developer tools and see the results in the console window.</p>
+
+<hr />
+
+<h3>Promise Test</h3>
+
+<p>Result: @promiseResult</p>
+
+<button type="button" class="btn btn-primary" @onclick="@RunMethodWithPromise">
+    Run promise to get result
+</button>
+
+<hr />
+
+<h3>Promise Test (but with the promise rejecting and returns an error)</h3>
+
+<p>Result: @error</p>
+
+<button type="button" class="btn btn-primary" @onclick="@RunMethodThatGeneratesAnError">
+    Run promise to get result (this time the promise rejects and returns an error)
+</button>
+
+@code {
+
+    public string promiseResult = "";
+    public string error = "";
+
+    [JSInvokable]
+    // This method is invoked from Javascript
+    public static Task<int[]> ReturnArrayAsync()
+    {
+        // Returns in integer array wtih three elements: 1, 2, and 3
+        return Task.FromResult(new int[] { 1, 2, 3 });
+    }
+
+    /// <summary>
+    /// Call the sayHello JavaScript method.  This method in-turn calls
+    /// the class method HelloHelper.SayHello to return the string to display
+    /// in the developers console.
+    /// </summary>
+    public async void TriggerNetInstanceMethod()
+    {
+        // Call say Hello, check the browser console
+        await new ExampleJsInterop(JsRuntime).CallHelloHelperSayHello("Blazor");
+    }
+
+    /// <summary>
+    /// Execute a JavaScript method that returns a promise that sets the results in the
+    /// associated Task object.
+    /// </summary>
+    public async void RunMethodWithPromise()
+    {
+        try
+        {
+            // Invoke CallFunctionWithPromise, in two seconds the results will be returned.
+            // Perform an await to wait for the result.  The result, if successful is the supplied 
+            // string else an error message.  This method always succeeds.
+            promiseResult
+                = await new ExampleJsInterop(JsRuntime).CallFunctionWithPromise(
+                    @"functionWithPromise",
+                    @"This is a message from the the razor page");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Execute a JavaScript method that encounters an error and in turn
+    /// raises an exception that is handled in this method.
+    /// </summary>
+    public async void RunMethodThatGeneratesAnError()
+    {
+        try
+        {
+            // Invoke CallFunctionWithPromise, this time an error will occur.  In two seconds
+            // an exception will be raised and the exception handler will process the error.
+            promiseResult
+                = await new ExampleJsInterop(JsRuntime).CallFunctionWithPromise(
+                    @"functionThatMakesAnError", // This function returns an error and raises an exception
+                    @"This is a message from the the razor page");
+        }
+        catch (Exception ex)
+        {
+            // This execution will raise an exception.  The exception message will be displayed
+            // to the user.
+            error = ex.Message;
+        }
+
+        StateHasChanged();
+    }
+
+}

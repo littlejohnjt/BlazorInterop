@@ -1,0 +1,41 @@
+
+@page "/CallJsMethod"
+@inject IJSRuntime JsRuntime
+@using System.Text
+
+<h3>Call Javascipt Method Example</h3>
+
+<button type="button" class="btn btn-primary" @onclick="@ConvertArray">
+    Convert Array
+</button>
+
+<p class="mt-2" style="font-size:1.6em">
+    <span class="badge badge-success">
+        @ConvertedText
+    </span>
+</p>
+
+@code {
+    private MarkupString ConvertedText =
+    new MarkupString("Select the <b>Convert Array</b> button.");
+
+    // Create a unsigned int array to convert to a string
+    private UInt32[] BlazorUIntArray
+        = Encoding.ASCII.GetBytes("Blazor is Awesome!").Select(c => Convert.ToUInt32(c)).ToArray();
+
+    /// <summary>
+    /// Convert the array of unsigned integers to a string using
+    /// a JavaScript method.
+    /// </summary>
+    private async void ConvertArray()
+    {
+        // Convert the array to a string
+        var text =
+            await JsRuntime.InvokeAsync<string>("ConvertArray", BlazorUIntArray);
+
+        // Display the converted text
+        ConvertedText = new MarkupString(text);
+
+        StateHasChanged();
+    }
+}
